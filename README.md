@@ -20,7 +20,7 @@ Através deste estudo, buscamos entender a eficácia desses modelos na previsão
 
 ## 📂 Dataset
 - Fonte dos dados: [Yahoo Finance](https://finance.yahoo.com/) ou [Binance API](https://binance-docs.github.io/apidocs/spot/en/).
-- Dados: Preço diário do Bitcoin (Open, High, Low, Close, Volume) dos últimos anos.
+- Dados: Preço diário do Bitcoin (Open, High, Low, Close, Volume) dos últimos 10 anos.
 
 ---
 
@@ -43,12 +43,6 @@ Através deste estudo, buscamos entender a eficácia desses modelos na previsão
   - SQLite ou PostgreSQL
 - **Documentação e Versionamento:**
   - Git & GitHub
-
----
-
-## 🚫 Atenção
-> ❌ **Streamlit está PROIBIDO neste projeto.**
-Se utilizar, haverá perda de **5 pontos na média**.
 
 ---
 
