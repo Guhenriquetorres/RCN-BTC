@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head><title>Previsões Disponíveis</title></head>
+<body>
+    <h1>Previsões do BTC (LSTM)</h1>
+    <table border="1">
+        <tr>
+            <th>Data</th>
+            <th>Preço Previsto</th>
+        </tr>
+        {% for p in previsoes %}
+        <tr>
+            <td>{{ p.data }}</td>
+            <td>{{ p.preco_previsto|floatformat:2 }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>

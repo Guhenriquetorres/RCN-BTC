@@ -1,0 +1,19 @@
+# Ignorar ambiente virtual
+RN_BTC/
+venv/
+env/
+
+# Ignorar modelos pesados
+*.h5
+*.hdf5
+
+# Ignorar arquivos temporários
+__pycache__/
+*.pyc
+*.pyo
+*.log
+
+# Ignorar arquivos do sistema
+.DS_Store
+*.sqlite3
+db.sqlite3

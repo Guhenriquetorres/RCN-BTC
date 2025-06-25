@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Previsão BTC-USD</title>
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f4f7f9;
+      margin: 0;
+      padding: 2rem;
+      color: #333;
+    }
+
+    .container {
+      max-width: 700px;
+      margin: auto;
+      padding: 2rem;
+      background: white;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      border-radius: 8px;
+    }
+
+    h2 {
+      text-align: center;
+      color: #2c3e50;
+    }
+
+    label {
+      font-weight: bold;
+      display: block;
+      margin-top: 1rem;
+    }
+
+    input[type="date"] {
+      width: 100%;
+      padding: 0.5rem;
+      margin-top: 0.5rem;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+    }
+
+    button {
+      margin-top: 1rem;
+      padding: 0.7rem;
+      width: 100%;
+      background-color: #2ecc71;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    button:hover {
+      background-color: #27ae60;
+    }
+
+    .resultado {
+      margin-top: 2rem;
+      padding: 1rem;
+      background-color: #ecf0f1;
+      border-left: 5px solid #2ecc71;
+    }
+
+    .erro {
+      background-color: #fbeaea;
+      border-left: 5px solid #e74c3c;
+      color: #c0392b;
+    }
+
+    #grafico {
+      margin-top: 2rem;
+    }
+
+    table {
+      width: 100%;
+      margin-top: 1rem;
+      border-collapse: collapse;
+    }
+
+    table, th, td {
+      border: 1px solid #ccc;
+    }
+
+    th, td {
+      padding: 0.6rem;
+      text-align: center;
+    }
+
+    th {
+      background-color: #2ecc71;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Consulta de Previsão de Preço BTC-USD</h2>
+    <p>Insira uma data e veja a previsão com base no modelo LSTM.</p>
+
+    <label for="data">Escolha uma data:</label>
+    <input type="date" id="data" name="data">
+    <button onclick="buscarPrevisao()">Buscar Previsão</button>
+
+    <div id="resultado" class="resultado" style="display: none;"></div>
+
+    <div id="grafico"></div>
+    <div id="tabela"></div>
+  </div>
+
+  <script>
+    async function buscarPrevisao() {
+      const data = document.getElementById('data').value;
+      const resultadoDiv = document.getElementById('resultado');
+      const graficoDiv = document.getElementById('grafico');
+      const tabelaDiv = document.getElementById('tabela');
+
+      resultadoDiv.style.display = "none";
+      graficoDiv.innerHTML = "";
+      tabelaDiv.innerHTML = "";
+
+      if (!data) {
+        resultadoDiv.innerText = "❌ Por favor, selecione uma data.";
+        resultadoDiv.classList.add("erro");
+        resultadoDiv.style.display = "block";
+        return;
+      }
+
+      try {
+        const response = await fetch(`/api/previsoes/buscar_por_data/?data=${data}`);
+        const dataJson = await response.json();
+
+        if (dataJson.erro) {
+          resultadoDiv.innerText = `❌ ${dataJson.erro}`;
+          resultadoDiv.classList.add("erro");
+        } else {
+          resultadoDiv.innerHTML = `
+            📅 <strong>Data:</strong> ${dataJson.data}<br>
+            💰 <strong>Preço Previsto:</strong> $${parseFloat(dataJson.preco_previsto).toFixed(2)}<br>
+            🤖 <strong>Modelo:</strong> ${dataJson.modelo}<br>
+            🔁 <strong>Paridade:</strong> ${dataJson.paridade}
+          `;
+          if (dataJson.preco_real) {
+            resultadoDiv.innerHTML += `<br>📈 <strong>Preço Real:</strong> $${parseFloat(dataJson.preco_real).toFixed(2)}`;
+          }
+
+          resultadoDiv.classList.remove("erro");
+
+          // Gráfico e tabela dos próximos 7 dias
+          const dataBase = new Date(data);
+          const datas = [];
+          const precosPrevistos = [];
+          const precosReais = [];
+
+          for (let i = 0; i < 7; i++) {
+            const novaData = new Date(dataBase);
+            novaData.setDate(dataBase.getDate() + i);
+            const iso = novaData.toISOString().split('T')[0];
+
+            const res = await fetch(`/api/previsoes/buscar_por_data/?data=${iso}`);
+            const prev = await res.json();
+
+            if (!prev.erro) {
+              datas.push(iso);
+              precosPrevistos.push(parseFloat(prev.preco_previsto).toFixed(2));
+              precosReais.push(prev.preco_real ? parseFloat(prev.preco_real).toFixed(2) : null);
+            }
+          }
+
+          const tracePrevisto = {
+            x: datas,
+            y: precosPrevistos,
+            name: 'Preço Previsto',
+            mode: 'lines+markers',
+            line: { color: 'blue' }
+          };
+
+          const traceReal = {
+            x: datas,
+            y: precosReais,
+            name: 'Preço Real',
+            mode: 'lines+markers',
+            line: { color: 'green' }
+          };
+
+          Plotly.newPlot('grafico', [tracePrevisto, traceReal], {
+            title: 'Previsão vs. Real BTC-USD (7 Dias)',
+            xaxis: { title: 'Data' },
+            yaxis: { title: 'Preço (USD)' }
+          });
+
+          // Tabela com previsão e real
+          let html = `<table><thead><tr><th>Data</th><th>Preço Previsto</th><th>Preço Real</th></tr></thead><tbody>`;
+          for (let i = 0; i < datas.length; i++) {
+            html += `<tr>
+              <td>${datas[i]}</td>
+              <td>$${precosPrevistos[i]}</td>
+              <td>${precosReais[i] ? `$${precosReais[i]}` : '-'}</td>
+            </tr>`;
+          }
+          html += `</tbody></table>`;
+          tabelaDiv.innerHTML = html;
+        }
+
+        resultadoDiv.style.display = "block";
+
+      } catch (error) {
+        resultadoDiv.innerText = "❌ Erro ao buscar previsão. Verifique se a API está rodando.";
+        resultadoDiv.classList.add("erro");
+        resultadoDiv.style.display = "block";
+      }
+    }
+  </script>
+</body>
+</html>
