@@ -12,6 +12,9 @@ Este projeto utiliza **Redes Neurais Recorrentes (LSTM)** para prever o preço d
 - 💾 **Persistência**: banco de dados com previsões salvas automaticamente.
 - 📅 **Consulta por data**: prevê apenas se o valor ainda não estiver no banco.
 - 🧠 **Autopreenchimento**: preenche previsões futuras automaticamente com base no último valor conhecido.
+- 📊 **Insights de mercado**: consolida candles de BTCUSDT e XAUUSDT em múltiplas granularidades (4h, 1d).
+- 🔗 **Correlação BTC x Ouro**: destaca a correlação móvel negativa entre os pares.
+- 🧱 **Métricas on-chain**: agrega informações públicas (hash rate, dificuldade, volume estimado, UTXO) para contextualizar as previsões.
 
 ---
 
@@ -67,6 +70,13 @@ Utiliza a arquitetura LSTM da biblioteca Keras/TensorFlow para capturar padrões
   - Gera novas previsões LSTM até alcançar a data pedida
   - Salva tudo no banco
 - Retorna: JSON com data, preço previsto, modelo, paridade e (se houver) **preço real** do BTC.
+
+### 📈 Indicadores avançados (GET)
+`/api/previsoes/indicadores-avancados/?intervalos=4h,1d&janela_correlacao=30&metricas=hash_rate,n_transactions`
+
+- Retorna candles recentes do **BTCUSDT** e **XAUUSDT** em múltiplas granularidades, prontos para gráficos.
+- Calcula a correlação móvel (janela configurável) entre ouro e Bitcoin para reforçar a relação negativa.
+- Agrega métricas on-chain públicas (hash rate, dificuldade, volume estimado, UTXOs) com metadados de coleta.
 
 ---
 

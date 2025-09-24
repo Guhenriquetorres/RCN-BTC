@@ -6,6 +6,7 @@ from django.http import JsonResponse
 from .models import PrevisaoBTC
 from .serializers import PrevisaoBTCSerializer
 from .modelos.modelo_lstm import prever_btc, prever_btc_dias_a_frente
+from .market_data import build_market_overview
 from datetime import datetime, timedelta
 import yfinance as yf
 
@@ -15,6 +16,34 @@ import yfinance as yf
 class PrevisaoBTCViewSet(viewsets.ModelViewSet):
     queryset = PrevisaoBTC.objects.all()
     serializer_class = PrevisaoBTCSerializer
+
+    @action(detail=False, methods=['get'], url_path='indicadores-avancados')
+    def indicadores_avancados(self, request):
+        intervalos_param = request.query_params.get('intervalos', '4h,1d')
+        intervalos = [item.strip() for item in intervalos_param.split(',') if item.strip()]
+        metricas_param = request.query_params.get('metricas')
+        metricas = [item.strip() for item in metricas_param.split(',') if item.strip()] if metricas_param else None
+
+        try:
+            limite = int(request.query_params.get('limite', 500))
+        except ValueError:
+            return Response({'erro': 'Parâmetro "limite" inválido.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            janela_correlacao = int(request.query_params.get('janela_correlacao', 30))
+        except ValueError:
+            return Response(
+                {'erro': 'Parâmetro "janela_correlacao" inválido.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        overview = build_market_overview(
+            intervals=intervalos or ['4h', '1d'],
+            lookback_limit=limite,
+            onchain_metrics=metricas,
+            correlation_window=janela_correlacao,
+        )
+        return Response(overview)
 
     @action(detail=False, methods=['get'], url_path='buscar_por_data')
     def buscar_por_data(self, request):
